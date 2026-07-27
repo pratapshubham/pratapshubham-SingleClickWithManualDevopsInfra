@@ -34,14 +34,14 @@ vnet = {
 
 subnet = {
   snet1 = {
-    name                 = "shubham-subnet"
+    name                 = "shubham-subnet-frontend"
     resource_group_name  = "shubham-rg"
     virtual_network_name = "shubham-vnet"
     address_prefixes = ["10.1.0.0/25"]
   }
 
   snet2 = {
-    name                 = "shubham-subnet2"
+    name                 = "shubham-subnet-backend"
     resource_group_name  = "shubham-rg"
     virtual_network_name = "shubham-vnet"
     address_prefixes = ["10.1.0.128/25"]
@@ -80,6 +80,28 @@ nsg = {
     name                = "backend-nsg"
     location            = "eastus"
     resource_group_name = "shubham-rg"
+
+  }
+
+}
+
+nsg_association = {
+
+  frontend = {
+
+    subnet_name         = "shubham-subnet-frontend"
+    virtual_network_name = "shubham-vnet"
+    resource_group_name = "shubham-rg"
+    nsg_name            = "frontend-nsg"
+
+  }
+
+  backend = {
+
+    subnet_name         = "shubham-subnet-backend"
+    virtual_network_name = "shubham-vnet"
+    resource_group_name = "shubham-rg"
+    nsg_name            = "backend-nsg"
 
   }
 

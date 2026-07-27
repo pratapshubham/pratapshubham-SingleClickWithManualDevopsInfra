@@ -28,3 +28,10 @@ module "network_security_group" {
   nsg = var.nsg
 
 }
+
+module "nsg_association" {
+
+  depends_on = [module.subnet,module.network_security_group]
+  source = "../../modules/azure_nsg_association"
+  nsg_association = var.nsg_association
+}
