@@ -40,7 +40,7 @@ subnet = {
     address_prefixes = ["10.1.0.0/25"]
   }
 
-    snet2 = {
+  snet2 = {
     name                 = "shubham-subnet2"
     resource_group_name  = "shubham-rg"
     virtual_network_name = "shubham-vnet"
