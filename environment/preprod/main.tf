@@ -35,3 +35,17 @@ module "nsg_association" {
   source = "../../modules/azure_nsg_association"
   nsg_association = var.nsg_association
 }
+
+module "nic" {
+
+  depends_on = [module.subnet,module.public_ip]
+  source = "../../modules/azure_nic"
+  nic = var.nic
+}
+
+module "virtual_machine" {
+
+  depends_on = [module.nic]
+  source = "../../modules/azure_virtual_machine"
+  vm = var.vm
+}

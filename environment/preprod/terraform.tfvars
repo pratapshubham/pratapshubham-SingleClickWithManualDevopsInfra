@@ -106,3 +106,54 @@ nsg_association = {
   }
 
 }
+
+nic = {
+
+  frontend = {
+
+    name                 = "frontend-nic"
+    location             = "eastus"
+    resource_group_name  = "shubham-rg"
+    subnet_name          = "shubham-subnet-frontend"
+    virtual_network_name = "shubham-vnet"
+    public_ip_name       = "frontend-pip"
+
+  }
+
+  backend = {
+
+    name                 = "backend-nic"
+    location             = "eastus"
+    resource_group_name  = "shubham-rg"
+    subnet_name          = "shubham-subnet-backend"
+    virtual_network_name = "shubham-vnet"
+    public_ip_name       = ""
+
+  }
+
+}
+
+vm = {
+
+  frontend = {
+
+    name                = "frontend-vm"
+    location            = "eastus"
+    resource_group_name = "shubham-rg"
+    size = "Standard_D2s_v3"
+    admin_username = "azureuser"
+    admin_password = "Password@123456"
+    nic_name = "frontend-nic"
+  }
+
+  backend = {
+
+    name                = "backend-vm"
+    location            = "eastus"
+    resource_group_name = "shubham-rg"
+    size = "Standard_D2s_v3"
+    admin_username = "azureuser"
+    admin_password = "Password@123456"
+    nic_name = "backend-nic"
+  }
+}
