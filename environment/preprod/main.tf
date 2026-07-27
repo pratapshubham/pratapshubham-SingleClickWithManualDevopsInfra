@@ -14,3 +14,17 @@ module "subnet" {
     source = "../../modules/azure_subnet"
     subnet = var.subnet
 }
+
+module "public_ip" {
+  depends_on = [module.resource_group]
+  source = "../../modules/azure_public_ip"
+  public_ip = var.public_ip
+}
+
+module "network_security_group" {
+
+  depends_on = [module.resource_group]
+  source = "../../modules/azure_network_security_group"
+  nsg = var.nsg
+
+}

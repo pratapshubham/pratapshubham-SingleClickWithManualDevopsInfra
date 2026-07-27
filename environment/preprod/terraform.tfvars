@@ -54,3 +54,33 @@ subnet = {
     address_prefixes = ["10.1.0.0/24"]
   }
 }
+
+public_ip = {
+
+  frontend = {
+    name                = "frontend-pip"
+    location            = "eastus"
+    resource_group_name = "shubham-rg"
+    allocation_method = "Static"
+    sku               = "Standard"
+  }
+
+}
+
+nsg = {
+
+  frontend = {
+    name                = "frontend-nsg"
+    location            = "eastus"
+    resource_group_name = "shubham-rg"
+
+  }
+
+  backend = {
+    name                = "backend-nsg"
+    location            = "eastus"
+    resource_group_name = "shubham-rg"
+
+  }
+
+}
