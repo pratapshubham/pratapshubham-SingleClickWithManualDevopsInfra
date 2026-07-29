@@ -14,3 +14,38 @@ module "subnet" {
     source = "../../modules/azure_subnet"
     subnet = var.subnet
 }
+
+module "public_ip" {
+  depends_on = [module.resource_group]
+  source = "../../modules/azure_public_ip"
+  public_ip = var.public_ip
+}
+
+module "network_security_group" {
+
+  depends_on = [module.resource_group]
+  source = "../../modules/azure_network_security_group"
+  nsg = var.nsg
+
+}
+
+module "nsg_association" {
+
+  depends_on = [module.subnet,module.network_security_group]
+  source = "../../modules/azure_nsg_association"
+  nsg_association = var.nsg_association
+}
+
+module "nic" {
+
+  depends_on = [module.subnet,module.public_ip]
+  source = "../../modules/azure_nic"
+  nic = var.nic
+}
+
+module "virtual_machine" {
+
+  depends_on = [module.nic]
+  source = "../../modules/azure_virtual_machine"
+  vm = var.vm
+}
