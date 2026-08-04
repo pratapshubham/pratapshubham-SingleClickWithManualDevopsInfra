@@ -9,10 +9,22 @@ rgvalue = {
     location = "centralindia"
   }
 
-   rg3 = {
+  rg3 = {
     name     = "queuebuster-rg"
     location = "centralindia"
   }
+}
+
+storage_account = {
+
+  storage_account1 = {
+    name                     = "shubhamstorage0108"
+    resource_group_name      = "shubham-rg"
+    location                 = "eastus"
+    account_tier             = "Standard"
+    account_replication_type = "LRS"
+  }
+
 }
 
 vnet = {
@@ -29,7 +41,7 @@ vnet = {
     location            = "centralindia"
     address_space       = ["10.1.0.0/16"]
   }
-  
+
 }
 
 subnet = {
@@ -37,21 +49,21 @@ subnet = {
     name                 = "shubham-subnet-frontend"
     resource_group_name  = "shubham-rg"
     virtual_network_name = "shubham-vnet"
-    address_prefixes = ["10.1.0.0/25"]
+    address_prefixes     = ["10.1.0.0/25"]
   }
 
   snet2 = {
     name                 = "shubham-subnet-backend"
     resource_group_name  = "shubham-rg"
     virtual_network_name = "shubham-vnet"
-    address_prefixes = ["10.1.0.128/25"]
+    address_prefixes     = ["10.1.0.128/25"]
   }
 
-   snet3 = {
+  snet3 = {
     name                 = "queuebuster-subnet"
     resource_group_name  = "queuebuster-rg"
     virtual_network_name = "queuebuster-vnet"
-    address_prefixes = ["10.1.0.0/24"]
+    address_prefixes     = ["10.1.0.0/24"]
   }
 }
 
@@ -61,8 +73,8 @@ public_ip = {
     name                = "frontend-pip"
     location            = "eastus"
     resource_group_name = "shubham-rg"
-    allocation_method = "Static"
-    sku               = "Standard"
+    allocation_method   = "Static"
+    sku                 = "Standard"
   }
 
 }
@@ -89,19 +101,19 @@ nsg_association = {
 
   frontend = {
 
-    subnet_name         = "shubham-subnet-frontend"
+    subnet_name          = "shubham-subnet-frontend"
     virtual_network_name = "shubham-vnet"
-    resource_group_name = "shubham-rg"
-    nsg_name            = "frontend-nsg"
+    resource_group_name  = "shubham-rg"
+    nsg_name             = "frontend-nsg"
 
   }
 
   backend = {
 
-    subnet_name         = "shubham-subnet-backend"
+    subnet_name          = "shubham-subnet-backend"
     virtual_network_name = "shubham-vnet"
-    resource_group_name = "shubham-rg"
-    nsg_name            = "backend-nsg"
+    resource_group_name  = "shubham-rg"
+    nsg_name             = "backend-nsg"
 
   }
 
@@ -140,10 +152,10 @@ vm = {
     name                = "frontend-vm"
     location            = "eastus"
     resource_group_name = "shubham-rg"
-    size = "Standard_D2s_v3"
-    admin_username = "azureuser"
-    admin_password = "Password@123456"
-    nic_name = "frontend-nic"
+    size                = "Standard_D2s_v3"
+    admin_username      = "azureuser"
+    admin_password      = "Password@123456"
+    nic_name            = "frontend-nic"
   }
 
   backend = {
@@ -151,9 +163,9 @@ vm = {
     name                = "backend-vm"
     location            = "eastus"
     resource_group_name = "shubham-rg"
-    size = "Standard_D2s_v3"
-    admin_username = "azureuser"
-    admin_password = "Password@123456"
-    nic_name = "backend-nic"
+    size                = "Standard_D2s_v3"
+    admin_username      = "azureuser"
+    admin_password      = "Password@123456"
+    nic_name            = "backend-nic"
   }
 }

@@ -1,8 +1,9 @@
 variable "rgvalue" {}
+variable "storage_account" {}
 variable "subnet" {}
 variable "vnet" {}
 variable "public_ip" {}
 variable "nsg" {}
 variable "nsg_association" {}
 variable "nic" {}
-variable "vm"{}
+variable "vm" {}
