@@ -4,6 +4,6 @@ resource "azurerm_resource_group" "rg1" {
     location = each.value.location
 
     tags = {
-        environment = each.value.environment
+        environment = "Preprod"
     }
 }
