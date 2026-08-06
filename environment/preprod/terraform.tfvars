@@ -174,7 +174,7 @@ nic = {
     resource_group_name  = "shubham-rg"
     subnet_name          = "queuebuster_subnet"
     virtual_network_name = "queuebuster-vnet"
-    public_ip_name       = "queuebuster-pip"
+    public_ip_name       = ""
 
   }
 
