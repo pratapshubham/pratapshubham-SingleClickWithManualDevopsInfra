@@ -32,14 +32,14 @@ vnet = {
     name                = "shubham-vnet"
     resource_group_name = "shubham-rg"
     location            = "eastus"
-    address_space       = ["10.1.0.0/24"]
+    address_space       = ["10.1.0.0/16"]
   }
 
   vnet2 = {
     name                = "queuebuster-vnet"
-    resource_group_name = "queuebuster-rg"
-    location            = "centralindia"
-    address_space       = ["10.1.0.0/16"]
+    resource_group_name = "shubham-rg"
+    location            = "eastus"
+    address_space       = ["10.2.0.0/16"]
   }
 
 }
@@ -60,10 +60,10 @@ subnet = {
   }
 
   snet3 = {
-    name                 = "queuebuster-subnet"
-    resource_group_name  = "queuebuster-rg"
+    name                 = "queuebuster_subnet"
+    resource_group_name  = "shubham-rg"
     virtual_network_name = "queuebuster-vnet"
-    address_prefixes     = ["10.1.0.0/24"]
+    address_prefixes     = ["10.2.0.0/24"]
   }
 }
 
@@ -71,6 +71,14 @@ public_ip = {
 
   frontend = {
     name                = "frontend-pip"
+    location            = "eastus"
+    resource_group_name = "shubham-rg"
+    allocation_method   = "Static"
+    sku                 = "Standard"
+  }
+
+  queuebuster_ip = {
+    name                = "queuebuster-pip"
     location            = "eastus"
     resource_group_name = "shubham-rg"
     allocation_method   = "Static"
@@ -90,6 +98,13 @@ nsg = {
 
   backend = {
     name                = "backend-nsg"
+    location            = "eastus"
+    resource_group_name = "shubham-rg"
+
+  }
+
+  frontend_queuebuster = {
+    name                = "queuebuster-nsg"
     location            = "eastus"
     resource_group_name = "shubham-rg"
 
@@ -117,6 +132,15 @@ nsg_association = {
 
   }
 
+  backend_queuebuster = {
+
+    subnet_name          = "queuebuster_subnet"
+    virtual_network_name = "queuebuster-vnet"
+    resource_group_name  = "shubham-rg"
+    nsg_name             = "frontend-nsg"
+
+  }
+
 }
 
 nic = {
@@ -137,9 +161,20 @@ nic = {
     name                 = "backend-nic"
     location             = "eastus"
     resource_group_name  = "shubham-rg"
-    subnet_name          = "shubham-subnet-backend"
-    virtual_network_name = "shubham-vnet"
+    subnet_name          = "queuebuster_subnet"
+    virtual_network_name = "queuebuster-vnet"
     public_ip_name       = ""
+
+  }
+
+  frontend_queuebuster = {
+
+    name                 = "queuebuster-nic"
+    location             = "eastus"
+    resource_group_name  = "shubham-rg"
+    subnet_name          = "queuebuster_subnet"
+    virtual_network_name = "queuebuster-vnet"
+    public_ip_name       = "queuebuster-pip"
 
   }
 
@@ -167,5 +202,17 @@ vm = {
     admin_username      = "azureuser"
     admin_password      = "Password@123456"
     nic_name            = "backend-nic"
+  }
+
+
+   backend_queuebuster = {
+
+    name                = "queuebuster-vm"
+    location            = "eastus"
+    resource_group_name = "shubham-rg"
+    size                = "Standard_D2s_v3"
+    admin_username      = "azureuser"
+    admin_password      = "Password@123456"
+    nic_name            = "queuebuster-nic"
   }
 }
