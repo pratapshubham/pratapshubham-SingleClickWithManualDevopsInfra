@@ -1,0 +1,130 @@
+name: Terraform Azure CI/CD
+
+on:
+  push:
+    branches:
+      - main_dev
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+      
+# Required for Azure OIDC authentication
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: read
+
+env:
+  TF_IN_AUTOMATION: true
+  ARM_USE_OIDC: true
+
+jobs:
+  terraform:
+    name: Terraform
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # --------------------------------------------------
+      # 1. Checkout Repository
+      # --------------------------------------------------
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+
+      # --------------------------------------------------
+      # 2. Azure Login using OIDC
+      # --------------------------------------------------
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+
+      # --------------------------------------------------
+      # 3. Verify Azure Login
+      # --------------------------------------------------
+      - name: Verify Azure Login
+        run: |
+          echo "Azure login successful"
+          az account show
+
+
+      # --------------------------------------------------
+      # 4. Setup Terraform
+      # --------------------------------------------------
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+
+      # --------------------------------------------------
+      # 5. Terraform Format Check
+      #
+      # Runs from repository root so modules are checked too.
+      # --------------------------------------------------
+      - name: Terraform Format Check
+        run: |
+          terraform fmt -check -recursive
+
+
+      # --------------------------------------------------
+      # 6. Terraform Init
+      #
+      # Terraform configuration is inside:
+      # environment/preprod
+      # --------------------------------------------------
+      - name: Terraform Init
+        working-directory: environment/preprod
+        run: |
+          terraform init
+
+
+      # --------------------------------------------------
+      # 7. Terraform Validate
+      # --------------------------------------------------
+      - name: Terraform Validate
+        working-directory: environment/preprod
+        run: |
+          terraform validate
+
+
+      # --------------------------------------------------
+      # 8. Terraform Plan
+      #
+      # Runs for:
+      # - main_dev push
+      # - PR targeting main
+      # - main push after PR merge
+      # --------------------------------------------------
+      - name: Terraform Plan
+        working-directory: environment/preprod
+        run: |
+          terraform plan -out=tfplan
+
+
+      # --------------------------------------------------
+      # 9. Terraform Apply
+      #
+      # Apply ONLY happens after code is pushed to main.
+      #
+      # main_dev:
+      #     init -> validate -> plan
+      #
+      # PR -> main:
+      #     init -> validate -> plan
+      #
+      # merged main:
+      #     init -> validate -> plan -> apply
+      # --------------------------------------------------
+      - name: Terraform Apply
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: environment/preprod
+        run: |
+          terraform apply -auto-approve tfplan
