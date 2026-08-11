@@ -205,7 +205,7 @@ vm = {
   }
 
 
-   backend_queuebuster = {
+  backend_queuebuster = {
 
     name                = "queuebuster-vm"
     location            = "eastus"

@@ -1,6 +1,6 @@
 data "azurerm_network_interface" "nic" {
 
-  for_each = var.vm
+  for_each            = var.vm
   name                = each.value.nic_name
   resource_group_name = each.value.resource_group_name
 }
@@ -26,10 +26,10 @@ resource "azurerm_linux_virtual_machine" "vm" {
   }
 
   source_image_reference {
-  publisher = "Canonical"
-  offer     = "ubuntu-24_04-lts"
-  sku        = "server"
-  version    = "latest"
+    publisher = "Canonical"
+    offer     = "ubuntu-24_04-lts"
+    sku       = "server"
+    version   = "latest"
   }
 
   computer_name = each.value.name
