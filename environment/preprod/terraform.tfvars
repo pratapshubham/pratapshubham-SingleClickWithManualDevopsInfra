@@ -207,7 +207,7 @@ vm = {
 
   backend_queuebuster = {
 
-    name                = "queuebuster-vm"
+    name                = "vikas-vm"
     location            = "eastus"
     resource_group_name = "shubham-rg"
     size                = "Standard_D2s_v3"
