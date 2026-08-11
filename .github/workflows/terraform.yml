@@ -47,7 +47,7 @@ jobs:
 
 
       # --------------------------------------------------
-      # 3. Verify Azure Login
+      # 3. Verify Azure Login CLI
       # --------------------------------------------------
       - name: Verify Azure Login
         run: |

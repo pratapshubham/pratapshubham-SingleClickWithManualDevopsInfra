@@ -8,7 +8,6 @@ rgvalue = {
     name     = "deepak-rg"
     location = "centralindia"
   }
-
   rg3 = {
     name     = "queuebuster-rg"
     location = "centralindia"
