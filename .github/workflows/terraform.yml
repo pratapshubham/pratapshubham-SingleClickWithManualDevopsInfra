@@ -1,0 +1,106 @@
+name: Terraform Azure CI/CD
+
+on:
+  push:
+    branches:
+      - main_dev
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: read
+
+env:
+  TF_IN_AUTOMATION: true
+  ARM_USE_OIDC: true
+
+jobs:
+
+  terraform:
+    name: Terraform
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # --------------------------------------------------
+      # Checkout repository
+      # --------------------------------------------------
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+
+      # --------------------------------------------------
+      # Azure Login using OIDC
+      # --------------------------------------------------
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+
+      # --------------------------------------------------
+      # Verify Azure Login
+      # --------------------------------------------------
+      - name: Verify Azure Login
+        run: |
+          az account show
+          az account set --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+
+
+      # --------------------------------------------------
+      # Setup Terraform
+      # --------------------------------------------------
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+
+      # --------------------------------------------------
+      # Terraform Format Check
+      # --------------------------------------------------
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+
+      # --------------------------------------------------
+      # Terraform Init
+      # --------------------------------------------------
+      - name: Terraform Init
+        run: terraform init
+
+
+      # --------------------------------------------------
+      # Terraform Validate
+      # --------------------------------------------------
+      - name: Terraform Validate
+        run: terraform validate
+
+
+      # --------------------------------------------------
+      # Terraform Plan
+      # --------------------------------------------------
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+
+      # --------------------------------------------------
+      # Terraform Apply
+      #
+      # Apply ONLY when:
+      # 1. Workflow is running because of push
+      # 2. Branch is main
+      #
+      # main_dev => plan only
+      # main      => plan + apply
+      # --------------------------------------------------
+      - name: Terraform Apply
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve tfplan
