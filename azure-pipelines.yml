@@ -11,11 +11,12 @@ variables:
   terraformVersion: '1.9.8'
   terraformWorkingDirectory: 'environment/preprod'
 
-stages:
 
 # ==========================================================
 # TERRAFORM PLAN
 # ==========================================================
+stages:
+
 - stage: TerraformPlan
   displayName: 'Terraform Plan'
 
@@ -25,51 +26,92 @@ stages:
 
     steps:
 
+    # ------------------------------------------------------
     # Checkout
+    # ------------------------------------------------------
     - checkout: self
       displayName: 'Checkout Code'
 
-    # Terraform
-    - task: TerraformInstaller@1
-      displayName: 'Install Terraform'
-      inputs:
-        terraformVersion: '$(terraformVersion)'
 
-    # Azure Login
+    # ------------------------------------------------------
+    # Install Terraform
+    # ------------------------------------------------------
+    - bash: |
+        set -e
+
+        echo "Installing Terraform $(terraformVersion)..."
+
+        wget -q "https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip"
+
+        unzip -o "terraform_$(terraformVersion)_linux_amd64.zip"
+
+        sudo mv terraform /usr/local/bin/terraform
+
+        terraform version
+      displayName: 'Install Terraform'
+
+
+    # ------------------------------------------------------
+    # Azure Login + Terraform
+    # ------------------------------------------------------
     - task: AzureCLI@2
-      displayName: 'Azure Login'
+      displayName: 'Azure Login + Terraform'
       inputs:
         azureSubscription: 'terraform-azure-connection'
         scriptType: 'bash'
         scriptLocation: 'inlineScript'
+        addSpnToEnvironment: true
         inlineScript: |
-          echo "Azure login successful"
+
+          set -e
+
+          echo "======================================"
+          echo "Azure Account"
+          echo "======================================"
+
           az account show
 
-    # Terraform Format
-    - script: |
-        terraform fmt -check -recursive
-      displayName: 'Terraform Format Check'
 
-    # Terraform Init
-    - script: |
-        terraform init
-      displayName: 'Terraform Init'
-      workingDirectory: '$(terraformWorkingDirectory)'
+          echo "======================================"
+          echo "Terraform Format Check"
+          echo "======================================"
 
-    # Terraform Validate
-    - script: |
-        terraform validate
-      displayName: 'Terraform Validate'
-      workingDirectory: '$(terraformWorkingDirectory)'
+          terraform fmt -check -recursive
 
-    # Terraform Plan
-    - script: |
-        terraform plan -out=tfplan
-      displayName: 'Terraform Plan'
-      workingDirectory: '$(terraformWorkingDirectory)'
 
-    # Publish Plan
+          echo "======================================"
+          echo "Terraform Init"
+          echo "======================================"
+
+          cd "$(terraformWorkingDirectory)"
+
+          terraform init
+
+
+          echo "======================================"
+          echo "Terraform Validate"
+          echo "======================================"
+
+          terraform validate
+
+
+          echo "======================================"
+          echo "Terraform Plan"
+          echo "======================================"
+
+          export ARM_USE_CLI=true
+
+          terraform plan -out=tfplan
+
+
+          echo "======================================"
+          echo "Terraform Plan Completed"
+          echo "======================================"
+
+
+    # ------------------------------------------------------
+    # Publish Terraform Plan
+    # ------------------------------------------------------
     - task: PublishPipelineArtifact@1
       displayName: 'Publish Terraform Plan'
       inputs:
@@ -80,18 +122,15 @@ stages:
 
 # ==========================================================
 # TERRAFORM APPLY
-# Only runs after a direct push to main.
+# Only runs after direct push to main
 # ==========================================================
+
 - stage: TerraformApply
   displayName: 'Terraform Apply'
 
   dependsOn: TerraformPlan
 
-  condition: and(
-    succeeded(),
-    eq(variables['Build.SourceBranch'], 'refs/heads/main'),
-    eq(variables['Build.Reason'], 'IndividualCI')
-  )
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.Reason'], 'IndividualCI'))
 
   jobs:
   - job: TerraformApply
@@ -99,48 +138,87 @@ stages:
 
     steps:
 
+    # ------------------------------------------------------
     # Checkout
+    # ------------------------------------------------------
     - checkout: self
       displayName: 'Checkout Code'
 
-    # Terraform
-    - task: TerraformInstaller@1
+
+    # ------------------------------------------------------
+    # Install Terraform
+    # ------------------------------------------------------
+    - bash: |
+        set -e
+
+        echo "Installing Terraform $(terraformVersion)..."
+
+        wget -q "https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip"
+
+        unzip -o "terraform_$(terraformVersion)_linux_amd64.zip"
+
+        sudo mv terraform /usr/local/bin/terraform
+
+        terraform version
       displayName: 'Install Terraform'
-      inputs:
-        terraformVersion: '$(terraformVersion)'
 
-    # Azure Login
-    - task: AzureCLI@2
-      displayName: 'Azure Login'
-      inputs:
-        azureSubscription: 'terraform-azure-connection'
-        scriptType: 'bash'
-        scriptLocation: 'inlineScript'
-        inlineScript: |
-          echo "Azure login successful"
-          az account show
 
-    # Terraform Init
-    - script: |
-        terraform init
-      displayName: 'Terraform Init'
-      workingDirectory: '$(terraformWorkingDirectory)'
-
-    # Download Plan
+    # ------------------------------------------------------
+    # Download Terraform Plan
+    # ------------------------------------------------------
     - task: DownloadPipelineArtifact@2
       displayName: 'Download Terraform Plan'
       inputs:
         artifact: 'terraform-plan'
         path: '$(Pipeline.Workspace)/terraform-plan'
 
-    # Copy Plan
-    - script: |
-        cp "$(Pipeline.Workspace)/terraform-plan/tfplan" \
-           "$(terraformWorkingDirectory)/tfplan"
-      displayName: 'Prepare Terraform Plan'
 
-    # Apply
-    - script: |
-        terraform apply -auto-approve tfplan
-      displayName: 'Terraform Apply'
-      workingDirectory: '$(terraformWorkingDirectory)'
+    # ------------------------------------------------------
+    # Azure Login + Terraform Apply
+    # ------------------------------------------------------
+    - task: AzureCLI@2
+      displayName: 'Azure Login + Terraform Apply'
+      inputs:
+        azureSubscription: 'terraform-azure-connection'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        addSpnToEnvironment: true
+        inlineScript: |
+
+          set -e
+
+          echo "======================================"
+          echo "Azure Account"
+          echo "======================================"
+
+          az account show
+
+
+          echo "======================================"
+          echo "Terraform Init"
+          echo "======================================"
+
+          cd "$(terraformWorkingDirectory)"
+
+          terraform init
+
+
+          echo "======================================"
+          echo "Prepare Terraform Plan"
+          echo "======================================"
+
+          cp "$(Pipeline.Workspace)/terraform-plan/tfplan" ./tfplan
+
+
+          echo "======================================"
+          echo "Terraform Apply"
+          echo "======================================"
+
+          export ARM_USE_CLI=true
+
+          terraform apply -auto-approve tfplan
+
+
+          echo "======================================"
+          echo "Terraform Apply Completed"
+          echo "======================================"
