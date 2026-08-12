@@ -25,17 +25,25 @@ stages:
 
     steps:
 
-    # Checkout
+    # ------------------------------------------------------
+    # Checkout Repository
+    # ------------------------------------------------------
     - checkout: self
       displayName: 'Checkout Code'
 
-    # Terraform
+
+    # ------------------------------------------------------
+    # Install Terraform
+    # ------------------------------------------------------
     - task: TerraformInstaller@1
       displayName: 'Install Terraform'
       inputs:
         terraformVersion: '$(terraformVersion)'
 
+
+    # ------------------------------------------------------
     # Azure Login
+    # ------------------------------------------------------
     - task: AzureCLI@2
       displayName: 'Azure Login'
       inputs:
@@ -46,30 +54,45 @@ stages:
           echo "Azure login successful"
           az account show
 
-    # Terraform Format
+
+    # ------------------------------------------------------
+    # Terraform Format Check
+    # ------------------------------------------------------
     - script: |
         terraform fmt -check -recursive
       displayName: 'Terraform Format Check'
 
+
+    # ------------------------------------------------------
     # Terraform Init
+    # ------------------------------------------------------
     - script: |
         terraform init
       displayName: 'Terraform Init'
       workingDirectory: '$(terraformWorkingDirectory)'
 
+
+    # ------------------------------------------------------
     # Terraform Validate
+    # ------------------------------------------------------
     - script: |
         terraform validate
       displayName: 'Terraform Validate'
       workingDirectory: '$(terraformWorkingDirectory)'
 
+
+    # ------------------------------------------------------
     # Terraform Plan
+    # ------------------------------------------------------
     - script: |
         terraform plan -out=tfplan
       displayName: 'Terraform Plan'
       workingDirectory: '$(terraformWorkingDirectory)'
 
-    # Publish Plan
+
+    # ------------------------------------------------------
+    # Publish Terraform Plan
+    # ------------------------------------------------------
     - task: PublishPipelineArtifact@1
       displayName: 'Publish Terraform Plan'
       inputs:
@@ -80,18 +103,14 @@ stages:
 
 # ==========================================================
 # TERRAFORM APPLY
-# Only runs after a direct push to main.
+# Runs only for direct push to main
 # ==========================================================
 - stage: TerraformApply
   displayName: 'Terraform Apply'
 
   dependsOn: TerraformPlan
 
-  condition: and(
-    succeeded(),
-    eq(variables['Build.SourceBranch'], 'refs/heads/main'),
-    eq(variables['Build.Reason'], 'IndividualCI')
-  )
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.Reason'], 'IndividualCI'))
 
   jobs:
   - job: TerraformApply
@@ -99,17 +118,25 @@ stages:
 
     steps:
 
-    # Checkout
+    # ------------------------------------------------------
+    # Checkout Repository
+    # ------------------------------------------------------
     - checkout: self
       displayName: 'Checkout Code'
 
-    # Terraform
+
+    # ------------------------------------------------------
+    # Install Terraform
+    # ------------------------------------------------------
     - task: TerraformInstaller@1
       displayName: 'Install Terraform'
       inputs:
         terraformVersion: '$(terraformVersion)'
 
+
+    # ------------------------------------------------------
     # Azure Login
+    # ------------------------------------------------------
     - task: AzureCLI@2
       displayName: 'Azure Login'
       inputs:
@@ -120,26 +147,37 @@ stages:
           echo "Azure login successful"
           az account show
 
+
+    # ------------------------------------------------------
     # Terraform Init
+    # ------------------------------------------------------
     - script: |
         terraform init
       displayName: 'Terraform Init'
       workingDirectory: '$(terraformWorkingDirectory)'
 
-    # Download Plan
+
+    # ------------------------------------------------------
+    # Download Terraform Plan
+    # ------------------------------------------------------
     - task: DownloadPipelineArtifact@2
       displayName: 'Download Terraform Plan'
       inputs:
         artifact: 'terraform-plan'
         path: '$(Pipeline.Workspace)/terraform-plan'
 
-    # Copy Plan
+
+    # ------------------------------------------------------
+    # Copy Terraform Plan
+    # ------------------------------------------------------
     - script: |
-        cp "$(Pipeline.Workspace)/terraform-plan/tfplan" \
-           "$(terraformWorkingDirectory)/tfplan"
+        cp "$(Pipeline.Workspace)/terraform-plan/tfplan" "$(terraformWorkingDirectory)/tfplan"
       displayName: 'Prepare Terraform Plan'
 
-    # Apply
+
+    # ------------------------------------------------------
+    # Terraform Apply
+    # ------------------------------------------------------
     - script: |
         terraform apply -auto-approve tfplan
       displayName: 'Terraform Apply'
