@@ -1,19 +1,146 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
-- main
+  branches:
+    include:
+      - main_dev
+      - main
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-latest'
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+variables:
+  terraformVersion: '1.9.8'
+  terraformWorkingDirectory: 'environment/preprod'
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+stages:
+
+# ==========================================================
+# TERRAFORM PLAN
+# ==========================================================
+- stage: TerraformPlan
+  displayName: 'Terraform Plan'
+
+  jobs:
+  - job: TerraformPlan
+    displayName: 'Terraform Init Validate Plan'
+
+    steps:
+
+    # Checkout
+    - checkout: self
+      displayName: 'Checkout Code'
+
+    # Terraform
+    - task: TerraformInstaller@1
+      displayName: 'Install Terraform'
+      inputs:
+        terraformVersion: '$(terraformVersion)'
+
+    # Azure Login
+    - task: AzureCLI@2
+      displayName: 'Azure Login'
+      inputs:
+        azureSubscription: 'terraform-azure-connection'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          echo "Azure login successful"
+          az account show
+
+    # Terraform Format
+    - script: |
+        terraform fmt -check -recursive
+      displayName: 'Terraform Format Check'
+
+    # Terraform Init
+    - script: |
+        terraform init
+      displayName: 'Terraform Init'
+      workingDirectory: '$(terraformWorkingDirectory)'
+
+    # Terraform Validate
+    - script: |
+        terraform validate
+      displayName: 'Terraform Validate'
+      workingDirectory: '$(terraformWorkingDirectory)'
+
+    # Terraform Plan
+    - script: |
+        terraform plan -out=tfplan
+      displayName: 'Terraform Plan'
+      workingDirectory: '$(terraformWorkingDirectory)'
+
+    # Publish Plan
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish Terraform Plan'
+      inputs:
+        targetPath: '$(terraformWorkingDirectory)/tfplan'
+        artifact: 'terraform-plan'
+        publishLocation: 'pipeline'
+
+
+# ==========================================================
+# TERRAFORM APPLY
+# Only runs after a direct push to main.
+# ==========================================================
+- stage: TerraformApply
+  displayName: 'Terraform Apply'
+
+  dependsOn: TerraformPlan
+
+  condition: and(
+    succeeded(),
+    eq(variables['Build.SourceBranch'], 'refs/heads/main'),
+    eq(variables['Build.Reason'], 'IndividualCI')
+  )
+
+  jobs:
+  - job: TerraformApply
+    displayName: 'Terraform Apply'
+
+    steps:
+
+    # Checkout
+    - checkout: self
+      displayName: 'Checkout Code'
+
+    # Terraform
+    - task: TerraformInstaller@1
+      displayName: 'Install Terraform'
+      inputs:
+        terraformVersion: '$(terraformVersion)'
+
+    # Azure Login
+    - task: AzureCLI@2
+      displayName: 'Azure Login'
+      inputs:
+        azureSubscription: 'terraform-azure-connection'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          echo "Azure login successful"
+          az account show
+
+    # Terraform Init
+    - script: |
+        terraform init
+      displayName: 'Terraform Init'
+      workingDirectory: '$(terraformWorkingDirectory)'
+
+    # Download Plan
+    - task: DownloadPipelineArtifact@2
+      displayName: 'Download Terraform Plan'
+      inputs:
+        artifact: 'terraform-plan'
+        path: '$(Pipeline.Workspace)/terraform-plan'
+
+    # Copy Plan
+    - script: |
+        cp "$(Pipeline.Workspace)/terraform-plan/tfplan" \
+           "$(terraformWorkingDirectory)/tfplan"
+      displayName: 'Prepare Terraform Plan'
+
+    # Apply
+    - script: |
+        terraform apply -auto-approve tfplan
+      displayName: 'Terraform Apply'
+      workingDirectory: '$(terraformWorkingDirectory)'
