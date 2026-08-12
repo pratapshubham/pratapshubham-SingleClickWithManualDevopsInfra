@@ -26,7 +26,7 @@ stages:
     steps:
 
     # ------------------------------------------------------
-    # Checkout Repository
+    # Checkout
     # ------------------------------------------------------
     - checkout: self
       displayName: 'Checkout Code'
@@ -35,10 +35,19 @@ stages:
     # ------------------------------------------------------
     # Install Terraform
     # ------------------------------------------------------
-    - task: TerraformInstaller@1
+    - bash: |
+        set -e
+
+        echo "Installing Terraform $(terraformVersion)..."
+
+        wget -q "https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip"
+
+        unzip -o "terraform_$(terraformVersion)_linux_amd64.zip"
+
+        sudo mv terraform /usr/local/bin/terraform
+
+        terraform version
       displayName: 'Install Terraform'
-      inputs:
-        terraformVersion: '$(terraformVersion)'
 
 
     # ------------------------------------------------------
@@ -58,7 +67,7 @@ stages:
     # ------------------------------------------------------
     # Terraform Format Check
     # ------------------------------------------------------
-    - script: |
+    - bash: |
         terraform fmt -check -recursive
       displayName: 'Terraform Format Check'
 
@@ -66,7 +75,7 @@ stages:
     # ------------------------------------------------------
     # Terraform Init
     # ------------------------------------------------------
-    - script: |
+    - bash: |
         terraform init
       displayName: 'Terraform Init'
       workingDirectory: '$(terraformWorkingDirectory)'
@@ -75,7 +84,7 @@ stages:
     # ------------------------------------------------------
     # Terraform Validate
     # ------------------------------------------------------
-    - script: |
+    - bash: |
         terraform validate
       displayName: 'Terraform Validate'
       workingDirectory: '$(terraformWorkingDirectory)'
@@ -84,7 +93,7 @@ stages:
     # ------------------------------------------------------
     # Terraform Plan
     # ------------------------------------------------------
-    - script: |
+    - bash: |
         terraform plan -out=tfplan
       displayName: 'Terraform Plan'
       workingDirectory: '$(terraformWorkingDirectory)'
@@ -103,7 +112,7 @@ stages:
 
 # ==========================================================
 # TERRAFORM APPLY
-# Runs only for direct push to main
+# Runs only after code reaches main branch
 # ==========================================================
 - stage: TerraformApply
   displayName: 'Terraform Apply'
@@ -119,7 +128,7 @@ stages:
     steps:
 
     # ------------------------------------------------------
-    # Checkout Repository
+    # Checkout
     # ------------------------------------------------------
     - checkout: self
       displayName: 'Checkout Code'
@@ -128,10 +137,19 @@ stages:
     # ------------------------------------------------------
     # Install Terraform
     # ------------------------------------------------------
-    - task: TerraformInstaller@1
+    - bash: |
+        set -e
+
+        echo "Installing Terraform $(terraformVersion)..."
+
+        wget -q "https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip"
+
+        unzip -o "terraform_$(terraformVersion)_linux_amd64.zip"
+
+        sudo mv terraform /usr/local/bin/terraform
+
+        terraform version
       displayName: 'Install Terraform'
-      inputs:
-        terraformVersion: '$(terraformVersion)'
 
 
     # ------------------------------------------------------
@@ -151,7 +169,7 @@ stages:
     # ------------------------------------------------------
     # Terraform Init
     # ------------------------------------------------------
-    - script: |
+    - bash: |
         terraform init
       displayName: 'Terraform Init'
       workingDirectory: '$(terraformWorkingDirectory)'
@@ -170,7 +188,7 @@ stages:
     # ------------------------------------------------------
     # Copy Terraform Plan
     # ------------------------------------------------------
-    - script: |
+    - bash: |
         cp "$(Pipeline.Workspace)/terraform-plan/tfplan" "$(terraformWorkingDirectory)/tfplan"
       displayName: 'Prepare Terraform Plan'
 
@@ -178,7 +196,7 @@ stages:
     # ------------------------------------------------------
     # Terraform Apply
     # ------------------------------------------------------
-    - script: |
+    - bash: |
         terraform apply -auto-approve tfplan
       displayName: 'Terraform Apply'
       workingDirectory: '$(terraformWorkingDirectory)'
