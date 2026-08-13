@@ -64,8 +64,14 @@ subnet = {
     virtual_network_name = "queuebuster-vnet"
     address_prefixes     = ["10.2.0.0/24"]
   }
-}
 
+  snet4 = {
+    name                 = "AzureBastionSubnet"
+    resource_group_name  = "shubham-rg"
+    virtual_network_name = "shubham-vnet"
+    address_prefixes     = ["10.0.1.0/24"]
+  }
+}
 public_ip = {
 
   frontend = {
@@ -151,7 +157,8 @@ nic = {
     resource_group_name  = "shubham-rg"
     subnet_name          = "shubham-subnet-frontend"
     virtual_network_name = "shubham-vnet"
-    public_ip_name       = "frontend-pip"
+    public_ip_name       = ""
+    #public_ip_name       = "frontend-pip"
 
   }
 
@@ -175,6 +182,20 @@ nic = {
     virtual_network_name = "queuebuster-vnet"
     public_ip_name       = ""
 
+  }
+
+}
+
+shubham_bastion = {
+
+  bastion1 = {
+    name                 = "shubham-bastion"
+    location             = "eastus"
+    resource_group_name  = "shubham-rg"
+    subnet_name          = "AzureBastionSubnet"
+    virtual_network_name = "shubham-vnet"
+    public_ip_name       = "frontend-pip"
+    instance_count       = 2
   }
 
 }
@@ -204,14 +225,12 @@ vm = {
   }
 
 
-  backend_queuebuster = {
-
-    name                = "vikas-vm"
-    location            = "eastus"
-    resource_group_name = "shubham-rg"
-    size                = "Standard_D2s_v3"
-    admin_username      = "azureuser"
-    admin_password      = "Password@123456"
-    nic_name            = "queuebuster-nic"
-  }
+  #backend_queuebuster = {
+  # name                = "vikas-vm"
+  #   location            = "eastus"
+  #  resource_group_name = "shubham-rg"
+  #size                = "Standard_D2s_v3"
+  # admin_username      = "azureuser"
+  #admin_password      = "Password@123456"
+  #nic_name            = "queuebuster-nic"
 }
