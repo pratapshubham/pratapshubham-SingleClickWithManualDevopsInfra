@@ -18,7 +18,7 @@ data "azurerm_public_ip" "pip" {
 
 
 resource "azurerm_bastion_host" "bastion" {
-for_each = var.shubham_bastion
+  for_each = var.shubham_bastion
 
   name                = each.value.name
   location            = each.value.location
@@ -26,8 +26,8 @@ for_each = var.shubham_bastion
 
 
   ip_configuration {
-    name = "internal"
-    subnet_id = data.azurerm_subnet.subnet[each.key].id
+    name                 = "internal"
+    subnet_id            = data.azurerm_subnet.subnet[each.key].id
     public_ip_address_id = data.azurerm_public_ip.pip[each.key].id
   }
 }

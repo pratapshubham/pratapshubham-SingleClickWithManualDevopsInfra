@@ -1,1 +1,1 @@
-variable "shubham_bastion"{}
+variable "shubham_bastion" {}
