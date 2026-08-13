@@ -8,7 +8,6 @@ data "azurerm_subnet" "subnet" {
 }
 
 data "azurerm_public_ip" "pip" {
-
   for_each = {
     for k, v in var.shubham_bastion : k => v if v.public_ip_name != ""
   }
