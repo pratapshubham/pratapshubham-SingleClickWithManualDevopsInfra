@@ -7,6 +7,7 @@ data "azurerm_subnet" "subnet" {
   resource_group_name  = each.value.resource_group_name
 }
 
+
 data "azurerm_public_ip" "pip" {
   for_each = {
     for k, v in var.shubham_bastion : k => v if v.public_ip_name != ""
