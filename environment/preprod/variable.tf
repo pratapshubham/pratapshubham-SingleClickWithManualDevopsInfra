@@ -7,3 +7,4 @@ variable "nsg" {}
 variable "nsg_association" {}
 variable "nic" {}
 variable "vm" {}
+variable "shubham_bastion" {}

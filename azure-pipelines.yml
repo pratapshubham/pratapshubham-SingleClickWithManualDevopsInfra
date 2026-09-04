@@ -1,19 +1,224 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
-- main
+  branches:
+    include:
+      - main_dev
+      - main
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-latest'
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+variables:
+  terraformVersion: '1.9.8'
+  terraformWorkingDirectory: 'environment/preprod'
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+
+# ==========================================================
+# TERRAFORM PLAN
+# ==========================================================
+stages:
+
+- stage: TerraformPlan
+  displayName: 'Terraform Plan'
+
+  jobs:
+  - job: TerraformPlan
+    displayName: 'Terraform Init Validate Plan'
+
+    steps:
+
+    # ------------------------------------------------------
+    # Checkout
+    # ------------------------------------------------------
+    - checkout: self
+      displayName: 'Checkout Code'
+
+
+    # ------------------------------------------------------
+    # Install Terraform
+    # ------------------------------------------------------
+    - bash: |
+        set -e
+
+        echo "Installing Terraform $(terraformVersion)..."
+
+        wget -q "https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip"
+
+        unzip -o "terraform_$(terraformVersion)_linux_amd64.zip"
+
+        sudo mv terraform /usr/local/bin/terraform
+
+        terraform version
+      displayName: 'Install Terraform'
+
+
+    # ------------------------------------------------------
+    # Azure Login + Terraform
+    # ------------------------------------------------------
+    - task: AzureCLI@2
+      displayName: 'Azure Login + Terraform'
+      inputs:
+        azureSubscription: 'terraform-azure-connection'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        addSpnToEnvironment: true
+        inlineScript: |
+
+          set -e
+
+          echo "======================================"
+          echo "Azure Account"
+          echo "======================================"
+
+          az account show
+
+
+          echo "======================================"
+          echo "Terraform Format Check"
+          echo "======================================"
+
+          terraform fmt -check -recursive
+
+
+          echo "======================================"
+          echo "Terraform Init"
+          echo "======================================"
+
+          cd "$(terraformWorkingDirectory)"
+
+          terraform init
+
+
+          echo "======================================"
+          echo "Terraform Validate"
+          echo "======================================"
+
+          terraform validate
+
+
+          echo "======================================"
+          echo "Terraform Plan"
+          echo "======================================"
+
+          export ARM_USE_CLI=true
+
+          terraform plan -out=tfplan
+
+
+          echo "======================================"
+          echo "Terraform Plan Completed"
+          echo "======================================"
+
+
+    # ------------------------------------------------------
+    # Publish Terraform Plan
+    # ------------------------------------------------------
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish Terraform Plan'
+      inputs:
+        targetPath: '$(terraformWorkingDirectory)/tfplan'
+        artifact: 'terraform-plan'
+        publishLocation: 'pipeline'
+
+
+# ==========================================================
+# TERRAFORM APPLY
+# Only runs after direct push to main
+# ==========================================================
+
+- stage: TerraformApply
+  displayName: 'Terraform Apply'
+
+  dependsOn: TerraformPlan
+
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.Reason'], 'IndividualCI'))
+
+  jobs:
+  - job: TerraformApply
+    displayName: 'Terraform Apply'
+
+    steps:
+
+    # ------------------------------------------------------
+    # Checkout
+    # ------------------------------------------------------
+    - checkout: self
+      displayName: 'Checkout Code'
+
+
+    # ------------------------------------------------------
+    # Install Terraform
+    # ------------------------------------------------------
+    - bash: |
+        set -e
+
+        echo "Installing Terraform $(terraformVersion)..."
+
+        wget -q "https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip"
+
+        unzip -o "terraform_$(terraformVersion)_linux_amd64.zip"
+
+        sudo mv terraform /usr/local/bin/terraform
+
+        terraform version
+      displayName: 'Install Terraform'
+
+
+    # ------------------------------------------------------
+    # Download Terraform Plan
+    # ------------------------------------------------------
+    - task: DownloadPipelineArtifact@2
+      displayName: 'Download Terraform Plan'
+      inputs:
+        artifact: 'terraform-plan'
+        path: '$(Pipeline.Workspace)/terraform-plan'
+
+
+    # ------------------------------------------------------
+    # Azure Login + Terraform Apply
+    # ------------------------------------------------------
+    - task: AzureCLI@2
+      displayName: 'Azure Login + Terraform Apply'
+      inputs:
+        azureSubscription: 'terraform-azure-connection'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        addSpnToEnvironment: true
+        inlineScript: |
+
+          set -e
+
+          echo "======================================"
+          echo "Azure Account"
+          echo "======================================"
+
+          az account show
+
+
+          echo "======================================"
+          echo "Terraform Init"
+          echo "======================================"
+
+          cd "$(terraformWorkingDirectory)"
+
+          terraform init
+
+
+          echo "======================================"
+          echo "Prepare Terraform Plan"
+          echo "======================================"
+
+          cp "$(Pipeline.Workspace)/terraform-plan/tfplan" ./tfplan
+
+
+          echo "======================================"
+          echo "Terraform Apply"
+          echo "======================================"
+
+          export ARM_USE_CLI=true
+
+          terraform apply -auto-approve tfplan
+
+
+          echo "======================================"
+          echo "Terraform Apply Completed"
+          echo "======================================"

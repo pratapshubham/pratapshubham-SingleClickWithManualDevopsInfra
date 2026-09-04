@@ -55,3 +55,10 @@ module "virtual_machine" {
   source     = "../../modules/azure_virtual_machine"
   vm         = var.vm
 }
+
+module "azure_bastion" {
+  depends_on      = [module.subnet, module.public_ip]
+  source          = "../../modules/azure_bastion_subnet"
+  shubham_bastion = var.shubham_bastion
+}
+
