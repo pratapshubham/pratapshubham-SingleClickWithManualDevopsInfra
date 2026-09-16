@@ -71,6 +71,13 @@ subnet = {
     virtual_network_name = "shubham-vnet"
     address_prefixes     = ["10.1.1.0/24"]
   }
+
+   snet5 = {
+    name                 = "ApplicationGatewaySubnet"
+    resource_group_name  = "shubham-rg"
+    virtual_network_name = "shubham-vnet"
+    address_prefixes     = ["10.1.2.0/26"]
+  }
 }
 public_ip = {
 
